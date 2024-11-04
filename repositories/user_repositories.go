@@ -58,5 +58,10 @@ func (r *UserRepositoryDB) Login(email, password string) (*models.User, error) {
 	}
 
 	user.Token = uuid.NewString()
+	updateStatement := `UPDATE users SET token = $1 WHERE id = $2`
+	_, err = r.db.Exec(updateStatement, user.Token, user.ID)
+	if err != nil {
+		return nil, err
+	}
 	return &user, nil
 }
