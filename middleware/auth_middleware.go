@@ -1,14 +1,24 @@
 package middleware
 
 import (
+	"golang-beginner-21/database"
 	"golang-beginner-21/utils"
 	"net/http"
 )
 
 func Middleware(next http.Handler) http.Handler {
+	db, err := database.InitDB()
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("token")
-		if authHeader == "" {
+		queryStatement := `SELECT id FROM users WHERE token = $1`
+		var userID int
+		err := db.QueryRow(queryStatement, authHeader).Scan(userID)
+		if err != nil || userID == 0 {
 			utils.RespondWithJSON(w, http.StatusUnauthorized, "Unauthorized", nil)
 			return
 		}
